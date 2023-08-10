@@ -85,12 +85,12 @@ const getFileLogger = (path) => {
 }
 
 
-const lineHasChineseLogger = getFileLogger('./log-1-all-lines-has-chinese.txt')
+const lineHasChineseLogger = getFileLogger('./Log/log-1-all-lines-has-chinese.txt')
 export function logLineOfLineHasChinese(str = '') {
   lineHasChineseLogger(str + '\n')
 }
 
-const debugInfoLogger = getFileLogger('./log-2-all-debug-info.txt')
+const debugInfoLogger = getFileLogger('./Log/log-2-all-debug-info.txt')
 export function logLineDebugInfo(str = '') {
   debugInfoLogger(str + '\n')
 }
