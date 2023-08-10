@@ -1,0 +1,23 @@
+{
+  "todo-tree.general.tags": [
+    "Has Chinese|true",
+    "Line need attention",
+  ],
+  "todo-tree.regex.regex": "(//|#|<!--|;|/\\*|^|^\\s*(-|\\d+.))\\s*($TAGS)",
+  "todo-tree.highlights.customHighlight": {
+    "Has Chinese|true": {
+      "background": "red",
+      "foreground": "white",
+      "type": "tag",
+      "hideFromTree": true,
+      "rulerColour": "#00000000"
+    },
+    "Line need attention": {
+      "background": "red",
+      "foreground": "white",
+      "type": "tag",
+      "hideFromTree": true,
+      "rulerColour": "#00000000"
+    },
+  }
+}
