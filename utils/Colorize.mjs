@@ -1,7 +1,3 @@
-import {
-  isDebug,
-} from './Command.mjs'
-
 export const colorMap = {
   red: 31,
   green: 32,
@@ -21,17 +17,13 @@ export const colorMap = {
   // - 重置颜色：\x1b[0m
 };
 
-export const logInTerminal = (...args) => {
-  if (isDebug) {
-    console.log(...args)
-  }
-}
-
 export const getColoredStr = (str, color = colorMap.white) => {
   return `\x1b[${color}m${str.replace(/\x1b\[\d+m([\s\S]*?)\x1b\[0m/g, (match) => `\x1b[0m${match}\x1b[${color}m`)}\x1b[0m`
 }
 
-const colorize = {}
+const colorize = {
+  colorMap,
+}
 
 Object.keys(colorMap).forEach((color) => {
   colorize[color] = (str = '') => {
@@ -39,5 +31,9 @@ Object.keys(colorMap).forEach((color) => {
     return getColoredStr(str, colorMap[color])
   }
 })
+
+String.prototype.highLight = function (reg, color = colorMap.white) {
+  return this.replace(reg, (match) => getColoredStr(match, color));
+};
 
 export default colorize
