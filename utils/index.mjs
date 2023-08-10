@@ -3,7 +3,10 @@ import * as Command from './Command.mjs'
 
 export function excutorWrapper(fn) {
   return (fileLineList) => {
-    fn(fileLineList)
+    const result = fn(fileLineList)
+    if (result) {
+      return false
+    }
     return fileLineList
   }
 }
