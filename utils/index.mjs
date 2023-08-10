@@ -3,8 +3,8 @@ import * as Command from './Command.mjs'
 
 export function excutorWrapper(fn) {
   return (fileLineList) => {
-    const result = fn(fileLineList)
-    if (result) {
+    const breakOffFlag = fn(fileLineList)
+    if (breakOffFlag) {
       return false
     }
     return fileLineList
@@ -26,9 +26,17 @@ export const usageHint = excutorWrapper(() => {
   }
 })
 
-export const startHint = excutorWrapper(() => {
+export const start = () => {
+    
+  let foldPath = Command.getCmdValue('--path')
+
+  if (!foldPath) {
+    console.log(colorize.red(`You did not pass a directory path, \nYou should run Code-Extractor with a directory path like ${colorize.yellow(`node index.mjs --path='./src'`)}`))
+    return
+  }
   console.log(colorize.blue(`=== Code-Extractor is running... ===`));
-})
+  return foldPath
+}
 
 export const endHint = excutorWrapper(() => {
   console.log(colorize.blue(`=== Code-Extractor is done ===`))

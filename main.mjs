@@ -14,26 +14,14 @@ import {
 } from './utils/FileUtils.mjs'
 
 import {
-  getCmdValue,
-} from './utils/Command.mjs'
-
-import {
   usageHint,
-  startHint,
+  start,
   endHint,
-  colorize,
 } from './utils/index.mjs'
 
 
 
 // main start
-
-let foldPath = getCmdValue('--path')
-
-if (!foldPath) {
-  foldPath = './src'
-  console.log(colorize.yellow(`You did not pass a path, script will running at ${colorize.red('./src')}`))
-}
 
 // You can add your custom function in array `excutors`.
 // All the function in excutors will be run in order.
@@ -58,7 +46,7 @@ const excutors = [
   except the data of func loadAllFileOfDir
 */
 promiseChainExcutor([
-  startHint,
+  start,
   // Get file path list of the directory `foldPath`,
   // which you passed by --path
   loadAllFileOfDir,
@@ -74,4 +62,4 @@ promiseChainExcutor([
   // or in array `excutors`.
   usageHint,
   endHint,
-], foldPath)
+])
