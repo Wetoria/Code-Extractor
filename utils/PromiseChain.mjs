@@ -6,7 +6,7 @@ export async function promiseChainExcutor(funcList, initialArgs) {
   let prevResults = initialArgs
   let func = funcList.shift()
   while(func) {
-    console.log(`${colorize.green('Excuting')} ${func.name} ...`)
+    console.log(`${colorize.blue('Excuting')} ${func.name} ...`)
     prevResults = await func(prevResults)
     
     // You can break off the chain by retrun false

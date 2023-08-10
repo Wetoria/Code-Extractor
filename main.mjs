@@ -18,6 +18,7 @@ import {
   usageHint,
   start,
   endHint,
+  logInTerminal,
 } from './utils/index.mjs'
 
 
@@ -59,9 +60,10 @@ promiseChainExcutor([
   // or just below.⬇️
 
   ...excutors,
+  logInTerminal.wrapperPassChainData(),
 
   // You can add your custom function above ⬆️,
   // or in array `excutors`.
-  usageHint.wrapperBreakOffChain(),
+  usageHint.wrapperPassChainData(),
   endHint.wrapperPassChainData(),
 ])
