@@ -106,7 +106,6 @@ export function recordLineWithChineseIntoLogFile(fileLineList) {
       logLineOfLineHasChinese()
     }
   })
-  return fileLineList
 }
 
 

@@ -20,7 +20,7 @@ export function containsChinese(str) {
   return regex.test(str);
 }
 
-export function getLineHasChinese(fileLineList) {
+export function collectLineHasChinese(fileLineList) {
   return fileLineList.filter((fileLine) => containsChinese(fileLine.value))
 }
 
@@ -56,4 +56,24 @@ function multiLineCommentFilter(fileLineList) {
     return true
   })
 }
-export const filterMultiLineComment = baseFilter(multiLineCommentFilter)
+export function filterMultiLineComment(...args) {
+  return baseFilter(multiLineCommentFilter)(...args)
+}
+
+function removeSingleLineComment(str = '') {
+  return str
+    // 过滤行内注释。ex： expression // comment 形式的注释
+    .replace(/(?<=(\s+|;|^))\/\/.*$/g, '')
+    // /* */ 格式
+    .replace(/\/\*.*?\*\//g, '')
+    // 过滤 JSX 单行注释
+    .replace(/{\/\*.*?\*\/}$/g, '')
+    // TODO html、CSS 注释或者其他
+}
+function singleLineCommentFilter(fileLineList) {
+  return fileLineList.filter((fileLine) => {
+    fileLine.value = removeSingleLineComment(fileLine.value)
+    return fileLine.value
+  })
+}
+export const filterSingleLineComment = baseFilter(singleLineCommentFilter)

@@ -1,6 +1,7 @@
 import {
   filterMultiLineComment,
-  getLineHasChinese,
+  collectLineHasChinese,
+  filterSingleLineComment,
 } from './utils/Filters.mjs'
 
 import {
@@ -26,9 +27,10 @@ import {
 // You can add your custom function in array `excutors`.
 // All the function in excutors will be run in order.
 const excutors = [
-  recordLineWithChineseIntoLogFile, // 记录所有的中文行，用来校对
+  recordLineWithChineseIntoLogFile.wrapperPassChainData(), // 记录所有的中文行，用来校对
   filterMultiLineComment, // 过滤多行注释，否则会开始和结束标记会被过滤掉
-  getLineHasChinese, // 过滤出需要的行，例如：包含中文的行
+  // filterSingleLineComment,
+  collectLineHasChinese, // 过滤出需要的行，例如：包含中文的行
 ]
 
 /**
@@ -60,6 +62,6 @@ promiseChainExcutor([
 
   // You can add your custom function above ⬆️,
   // or in array `excutors`.
-  usageHint,
-  endHint,
+  usageHint.wrapperBreakOffChain(),
+  endHint.wrapperPassChainData(),
 ])
