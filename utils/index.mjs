@@ -1,6 +1,10 @@
 import colorize from './Colorize.mjs'
 import * as Command from './Command.mjs'
 
+import {
+  promiseChainExcutor,
+} from './PromiseChain.mjs'
+
 export function getNamedFunction(key, fn = () => {}) {
   const coloredKey = `${key}`
   const obj = {
@@ -45,13 +49,9 @@ export function logInTerminal(fileLineList) {
   fileLineList.forEach((fileLine) => {
     const logLineString = fileLine.value
       // 单引号字符串
-      .highLight(/'(([^']|(\\'))*[\u4e00-\u9fa5]+([^']|(\\'))*)?'[^:]/g, colorize.colorMap.yellow)
-      // 双引号字符串
-      .highLight(/"([^"]|(\\"))*[\u4e00-\u9fa5]+([^"]|(\\"))*[^=]"/g, colorize.colorMap.red)
-      // 反引号单行字符串
-      // .highLight(/`([^`]|(\\`))*[\u4e00-\u9fa5]+([^`]|(\\`))*`/g, colorize.colorMap.cyan)
+      .highLight(/('(([^'})]|\\')*[\u4e00-\u9fa5]+([^']|\\')*)')|("(([^"})]|\\")*[\u4e00-\u9fa5]+([^"]|\\")*)")|(`(([^`]|\\`)*[\u4e00-\u9fa5]+([^`]|\\`)*)`)|(((?<=(>\s*))([^{}<]*[\u4e00-\u9fa5]+[^{}<]*)(?=(\s*<))))|(((?<=(}\s*))([^<>{}]*[\u4e00-\u9fa5]+[^<>{}]*)(?=(\s*<))))|(((?<=(>\s*))([^<{]*[\u4e00-\u9fa5]+[^<{]*)(?=(\s*{))))|(((?<=(}\s*))([^><'"`}]*[\u4e00-\u9fa5]+[^><'"`"}]*)(?=(\s*{))))|(((?<=(^\s*))([^<}{>'"`]*[\u4e00-\u9fa5]+[^<{}]*)(?=(\s*(<|{|$)))))|(((?<=((>|})\s*))([^<>{}'"`]*[\u4e00-\u9fa5]+[^<>{}'"`]*)(?=$)))/g, colorize.colorMap.red)
 
-    console.log(`|${logLineString}| ${colorize.blue(`Line from ${fileLine.filePath}:${fileLine.lineNumber}`)}`)
+    console.log(`|${logLineString}| ${colorize.blue(`Line from ${fileLine.filePath}:${fileLine.lineNumber}:${fileLine.colIndex}`)}`)
     // console.log(`Highlight    |${logLineString}|`)
   })
 
@@ -94,8 +94,8 @@ export const onlyOneBackQuoteLine = getChecker({
   prompt: (i) => console.log(`${colorize.yellow(`Warning: `)} You have line only contains ${colorize.yellow(`1 back quote(\`)`)} ${getCheckerPromptOfFileInfo(i)}`),
   endPrompt: (executed) => {
     if (executed) {
-      console.log(`This script will not extract multi line string of back quote(\`).`)
-      console.log(`You should handle it by yourself.\n`)
+      console.log(colorize.yellow(`This script will not extract multi line string of back quote(\`).`))
+      console.log(colorize.yellow(`You should handle it by yourself.\n`))
     }
   }
 })
@@ -105,8 +105,34 @@ export const checkHasTarget = getChecker({
   reg: /(\\')|(\\")/g,
   prompt: (i) => {
     console.log(`${colorize.yellow(`Warning: `)} You write string with ${colorize.yellow(`\\'`)} and ${colorize.yellow(`\\"`)} ${getCheckerPromptOfFileInfo(i)}`)
+  },
+  endPrompt: () => {
+    console.log(colorize.yellow(`You must be careful of the results above. To ensure the final extract results is correctly.\n`))
   }
 })
+
+
+
+export const extractLines = (fileLineList) => {
+  let reg = /('(([^'})]|\\')*[\u4e00-\u9fa5]+([^']|\\')*)')|("(([^"})]|\\")*[\u4e00-\u9fa5]+([^"]|\\")*)")|(`(([^`]|\\`)*[\u4e00-\u9fa5]+([^`]|\\`)*)`)|(((?<=(>\s*))([^{}<]*[\u4e00-\u9fa5]+[^{}<]*)(?=(\s*<))))|(((?<=(}\s*))([^<>{}]*[\u4e00-\u9fa5]+[^<>{}]*)(?=(\s*<))))|(((?<=(>\s*))([^<{]*[\u4e00-\u9fa5]+[^<{]*)(?=(\s*{))))|(((?<=(}\s*))([^><'"`}]*[\u4e00-\u9fa5]+[^><'"`"}]*)(?=(\s*{))))|(((?<=(^\s*))([^<}{>'"`]*[\u4e00-\u9fa5]+[^<{}]*)(?=(\s*(<|{|$)))))|(((?<=((>|})\s*))([^<>{}'"`]*[\u4e00-\u9fa5]+[^<>{}'"`]*)(?=$)))/g
+  let backQuoteReg = /(`(([^`]|\\`)*[\u4e00-\u9fa5]+([^`]|\\`)*)`)/g
+  const results = []
+  fileLineList.forEach((fileLine) => {
+    const matched = fileLine.value.match(reg)
+    if (matched) {
+      matched.forEach((match) => {
+        const colIndex = fileLine.value.indexOf(match.trim())
+        results.push({
+          ...fileLine,
+          value: match.trim(),
+          colIndex: colIndex + 1,
+        })
+      })
+    }
+    return matched
+  })
+  return results
+}
 
 export {
   colorize,

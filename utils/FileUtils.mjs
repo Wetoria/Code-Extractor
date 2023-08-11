@@ -131,3 +131,12 @@ export const recordLinesAfterFilterMultiLineComment = (fileLineList) => {
   logLineDebugInfo()
 }
 
+const resultsLogger = getFileLogger('./Log/log-4-result.txt')
+export function logLineOfResult(str = '') {
+  resultsLogger(str + '\n')
+}
+export function recordResults(fileLineList) {
+  fileLineList.forEach((fileLine) => {
+    logLineOfResult(fileLine.value)
+  })
+}

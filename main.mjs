@@ -15,6 +15,7 @@ import {
   recordLineWithChineseIntoLogFile,
   recordLinesAfterFilterMultiLineComment,
   recordLineHasChineseAfterFilter,
+  recordResults,
 } from './utils/FileUtils.mjs'
 
 import {
@@ -24,6 +25,7 @@ import {
   logInTerminal,
   onlyOneBackQuoteLine,
   checkHasTarget,
+  extractLines,
 } from './utils/index.mjs'
 
 
@@ -48,7 +50,9 @@ const executors = [
   filterSingleLineComment,  // 过滤单行注释
   collectLineHasChinese, // 从过滤后的结果中，提取包括中文的行
   recordLineHasChineseAfterFilter.wrapperPassChainData(), // record
-  // logInTerminal.wrapperPassChainData(), // record
+  extractLines,
+  logInTerminal.wrapperPassChainData(), // record
+  recordResults.wrapperPassChainData(),
 ]
 
 /**
