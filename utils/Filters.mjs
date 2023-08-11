@@ -76,4 +76,16 @@ function singleLineCommentFilter(fileLineList) {
     return fileLine.value
   })
 }
-export const filterSingleLineComment = baseFilter(singleLineCommentFilter)
+export const filterSingleLineComment = (...args) => {
+  return singleLineCommentFilter(...args)
+  // return baseFilter(singleLineCommentFilter)(...args)
+}
+
+function blackRowFilter(fileLineList) {
+  return fileLineList.filter((fileLine) => {
+    return fileLine.value.trim()
+  })
+}
+export function filterBlankRow(...args) {
+  return baseFilter(blackRowFilter)(...args)
+}

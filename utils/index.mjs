@@ -1,8 +1,17 @@
 import colorize from './Colorize.mjs'
 import * as Command from './Command.mjs'
 
+export function getNamedFunction(key, fn = () => {}) {
+  const coloredKey = `${key}`
+  const obj = {
+    [coloredKey]: (...args) => {
+      return fn(...args)
+    }
+  }
+  return obj[coloredKey]
+}
+
 export let start = () => {
-  console.log(colorize.green(`=== Code-Extractor is running... ===`));
   let foldPath = Command.getCmdValue('--path')
 
   if (!foldPath) {
@@ -36,24 +45,68 @@ export function logInTerminal(fileLineList) {
   fileLineList.forEach((fileLine) => {
     const logLineString = fileLine.value
       // 单引号字符串
-      .highLight(/'([^']|(\\'))*[\u4e00-\u9fa5]+([^']|(\\'))*'/g, colorize.colorMap.purple)
+      .highLight(/'(([^']|(\\'))*[\u4e00-\u9fa5]+([^']|(\\'))*)?'[^:]/g, colorize.colorMap.yellow)
       // 双引号字符串
-      .highLight(/"([^"]|(\\"))*[\u4e00-\u9fa5]+([^"]|(\\"))*"/g, colorize.colorMap.purple)
+      .highLight(/"([^"]|(\\"))*[\u4e00-\u9fa5]+([^"]|(\\"))*[^=]"/g, colorize.colorMap.red)
       // 反引号单行字符串
-      .highLight(/`([^`]|(\\`))*[\u4e00-\u9fa5]+([^`]|(\\`))*`/g, colorize.colorMap.purple)
-      // 反引号多行开始行
+      // .highLight(/`([^`]|(\\`))*[\u4e00-\u9fa5]+([^`]|(\\`))*`/g, colorize.colorMap.cyan)
 
-      // 反引号多行结束行
-      .highLight(/(?<=(\s*))([^`])*[\u4e00-\u9fa5]+([^`])*`/g, colorize.colorMap.purple)
-      // 当行文字
-      .highLight(/(?<=(\s*))([^><'"`])*[\u4e00-\u9fa5]+([^><'"`])*(?=(\s*(<|{|$)))/g, colorize.colorMap.purple);
-
-    console.log(`Line from ${fileLine.filePath}:${fileLine.lineNumber}`)
-    console.log(`Highlight    |${logLineString}|`)
+    console.log(`|${logLineString}| ${colorize.blue(`Line from ${fileLine.filePath}:${fileLine.lineNumber}`)}`)
+    // console.log(`Highlight    |${logLineString}|`)
   })
 
   return fileLineList
 }
+
+function getChecker({
+  reg,
+  condition = (arr) => arr && arr.length,
+  prompt = () => {},
+  endPrompt = () => {},
+  checkerName,
+}) {
+  
+  let key = `Check ${reg}`
+  return getNamedFunction(checkerName || key, (fileLineList) => {
+    let flag = false
+    fileLineList.forEach((i) => {
+      const num = i.value.match(reg)
+      if (condition(num)) {
+        if (!flag) {
+          flag = true
+        }
+        prompt(i)
+      }
+    })
+    endPrompt(flag)
+  })
+}
+
+function getCheckerPromptOfFileInfo(fileLine) {
+  return `\n${colorize.yellow(`Line is:`)} ${fileLine.value} |\n${colorize.yellow(`   from:`)} ${colorize.blue(`${fileLine.filePath}:${fileLine.lineNumber}\n`)}`
+}
+
+
+export const onlyOneBackQuoteLine = getChecker({
+  checkerName: colorize.cyan('has only one back quoto line'),
+  reg: /`/g,
+  condition: (arr) => arr && arr.length && arr.length === 1,
+  prompt: (i) => console.log(`${colorize.yellow(`Warning: `)} You have line only contains ${colorize.yellow(`1 back quote(\`)`)} ${getCheckerPromptOfFileInfo(i)}`),
+  endPrompt: (executed) => {
+    if (executed) {
+      console.log(`This script will not extract multi line string of back quote(\`).`)
+      console.log(`You should handle it by yourself.\n`)
+    }
+  }
+})
+
+export const checkHasTarget = getChecker({
+  checkerName: colorize.cyan(`has \\' or \\" in line`),
+  reg: /(\\')|(\\")/g,
+  prompt: (i) => {
+    console.log(`${colorize.yellow(`Warning: `)} You write string with ${colorize.yellow(`\\'`)} and ${colorize.yellow(`\\"`)} ${getCheckerPromptOfFileInfo(i)}`)
+  }
+})
 
 export {
   colorize,

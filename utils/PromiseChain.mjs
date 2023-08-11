@@ -1,5 +1,6 @@
 import {
   colorize,
+  getNamedFunction,
 } from './index.mjs'
 
 export async function promiseChainExcutor(funcList, initialArgs) {
@@ -18,32 +19,16 @@ export async function promiseChainExcutor(funcList, initialArgs) {
 }
 
 
-function PassChainDataWrapper(fn) {
-  let key = `${fn.name} with PassChainDataWrapper`
-  const obj = {
-    [key]: (fileLineList) => {
-      fn(fileLineList)
-      return fileLineList
-    }
-  }
-  return obj[key]
-}
-
-function BreakOffChainWrapper(fn) {
-  let key = `${fn.name} with BreakOffChainWrapper`
-  const obj = {
-    [key]: (fileLineList) => {
-      fn(fileLineList)
-      return false
-    }
-  }
-  return obj[key]
-}
-
 Function.prototype.wrapperPassChainData = function() {
-  return PassChainDataWrapper(this)
+  return getNamedFunction(`${this.name} with PassChainDataWrapper`, (fileLineList) => {
+    this(fileLineList)
+    return fileLineList
+  })
 }
 
 Function.prototype.wrapperBreakOffChain = function (arr) {
-  return BreakOffChainWrapper(this)
+  return getNamedFunction(`${this.name} with BreakOffChainWrapper`, (fileLineList) => {
+    this(fileLineList)
+    return false
+  })
 }

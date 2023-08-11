@@ -94,6 +94,17 @@ const debugInfoLogger = getFileLogger('./Log/log-2-all-debug-info.txt')
 export function logLineDebugInfo(str = '') {
   debugInfoLogger(str + '\n')
 }
+const lineHasChineseAfterFilterLogger = getFileLogger('./Log/log-3-lines-has-chinese-after-filter.txt')
+export function logLineOfLineHasChineseAfterFilter(str = '') {
+  lineHasChineseAfterFilterLogger(str + '\n')
+}
+export function recordLineHasChineseAfterFilter(fileLineList) {
+  fileLineList.forEach((fileLine) => {
+    logLineOfLineHasChineseAfterFilter(`Line from file://${fileLine.fullPath}#${fileLine.lineNumber}`)
+    logLineOfLineHasChineseAfterFilter(`Line need attention |${fileLine.value}|`)
+    logLineOfLineHasChineseAfterFilter()
+  })
+}
 
 import {
   containsChinese,
@@ -108,7 +119,15 @@ export function recordLineWithChineseIntoLogFile(fileLineList) {
   })
 }
 
-
-
-
+export const recordLinesAfterFilterMultiLineComment = (fileLineList) => {
+  logLineDebugInfo()
+  logLineDebugInfo(`========== recordLinesAfterFilterMultiLineComment start ==========`)
+  fileLineList.forEach((fileLine) => {
+    logLineDebugInfo(`Line from file://${fileLine.fullPath}#${fileLine.lineNumber}`)
+    logLineDebugInfo(`Original |${fileLine.value}|`)
+    logLineDebugInfo()
+  })
+  logLineDebugInfo(`========== recordLinesAfterFilterMultiLineComment end ==========`)
+  logLineDebugInfo()
+}
 
