@@ -108,7 +108,7 @@ export function recordLineHasChineseAfterFilter(fileLineList) {
 
 import {
   containsChinese,
-} from './Filters.mjs'
+} from './RegExpUtils.mjs'
 export function recordLineWithChineseIntoLogFile(fileLineList) {
   fileLineList.forEach((fileLine) => {
     if (containsChinese(fileLine.value)) {

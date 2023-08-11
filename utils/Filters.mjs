@@ -1,8 +1,9 @@
 import {
   logLineDebugInfo
 } from './FileUtils.mjs'
-
-let containsChineseRegStr = '[\u4e00-\u9fa5]'
+import {
+  containsChinese,
+} from './RegExpUtils.mjs'
 
 function baseFilter(fn) {
   return (fileLineList) => {
@@ -15,10 +16,6 @@ function baseFilter(fn) {
   }
 }
 
-export function containsChinese(str) {
-  const regex = new RegExp(containsChineseRegStr, 'g');
-  return regex.test(str);
-}
 
 export function collectLineHasChinese(fileLineList) {
   return fileLineList.filter((fileLine) => containsChinese(fileLine.value))
