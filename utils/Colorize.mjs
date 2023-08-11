@@ -18,7 +18,7 @@ export const colorMap = {
 };
 
 export const getColoredStr = (str, color = colorMap.white) => {
-  return `\x1b[${color}m${str.replace(/\x1b\[\d+m([\s\S]*?)\x1b\[0m/g, (match) => `\x1b[0m${match}\x1b[${color}m`)}\x1b[0m`
+  return `\x1b[${color}m${str.replace(/\x1b\[\d+m([\s\S]*)\x1b\[0m/g, (match) => `\x1b[0m${match}\x1b[${color}m`)}\x1b[0m`
 }
 
 const colorize = {
