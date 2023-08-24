@@ -60,7 +60,7 @@ export function filterMultiLineComment(...args) {
 function removeSingleLineComment(str = '') {
   return str
     // 过滤行内注释。ex： expression // comment 形式的注释
-    .replace(/(?<=(\s+|;|^))\/\/.*$/g, '')
+    .replace(/(?<=(\s+|;|^|:))\/\/.*$/g, '')
     // /* */ 格式
     .replace(/\/\*.*?\*\//g, '')
     // 过滤 JSX 单行注释
