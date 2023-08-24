@@ -9,9 +9,12 @@ const __filename = fileURLToPath(import.meta.url);
 let __dirname = dirname(__filename);
 __dirname = dirname(__dirname + '../')
 
-const fileSuffix = '.jsx|.js|.tsx'
+const fileSuffix = '.jsx|.js|.tsx|.ts'
 const excludes = [
-  'markdown-editor.js'
+  'markdown-editor.js',
+  'localeData.ts',
+  'intl.ts',
+  'intl.tsx',
 ]
 
 function getFiles(dir, fileList = []) {
@@ -53,7 +56,7 @@ export async function readFileListSync(filePaths) {
   return result
 }
 
-async function readFileLineByLine(filePath) {
+export async function readFileLineByLine(filePath) {
   const fileStream = fs.createReadStream(filePath);
 
   const rl = readline.createInterface({
@@ -77,7 +80,9 @@ async function readFileLineByLine(filePath) {
 }
 
 
-const getFileLogger = (path) => {
+export const getFileLogger = (path) => {
+  const dir = dirname(path);
+  fs.mkdirSync(dir, { recursive: true })
   fs.writeFileSync(path, '')
   return (str = '') => {
     fs.appendFileSync(path, str)
@@ -137,6 +142,6 @@ export function logLineOfResult(str = '') {
 }
 export function recordResults(fileLineList) {
   fileLineList.forEach((fileLine) => {
-    logLineOfResult(fileLine.value)
+    logLineOfResult(JSON.stringify(fileLine) + ', ')
   })
 }
