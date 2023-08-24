@@ -1,12 +1,13 @@
 import crypto from 'crypto'
-const hash = crypto.createHash('md5');
 import https from 'https'
 
 let appid = ''
 let key = ''
 let salt = '123456'
 
-export function translateRequest(str, from = 'en', to = 'zh') {
+export function translateRequest(str, from = 'zh', to = 'en') {
+  if (!str) return
+  const hash = crypto.createHash('md5');
   let sign = hash.update(`${appid}${str}${salt}${key}`).digest('hex')
 
   return new Promise((res, rej) => {
@@ -37,22 +38,31 @@ export function translateRequest(str, from = 'en', to = 'zh') {
   })
 }
 
-export async function getTranslate(readyList, from, to) {
+export async function batchGetTranslate(readyList, from, to) {
   const params = []
   let oldStr = ''
   readyList.forEach((item) => {
-    const newStr = oldStr + item.value + '\n'
-    if (newStr.length> 6000) {
+    const newStr = oldStr + item.formatted + '\n'
+    if (newStr.length > 2000) {
       params.push(oldStr.replace(/\n$/g, ''))
       oldStr = ''
+    } else {
+      oldStr = newStr
     }
-    oldStr = newStr
   })
   params.push(oldStr.replace(/\n$/g, ''))
   const result = []
   for (let item of params) {
     const resp = await translateRequest(item, from, to)
-    result.push(resp)
+    result.push(...resp)
   }
   return result
+}
+
+export async function getTranslate(readyList, from, to) {
+  for (let item of readyList) {
+    const resp = await translateRequest(item.formatted, from, to)
+    const translated = resp[0]
+    item[translated.from] = translated.dst
+  }
 }
