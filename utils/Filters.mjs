@@ -57,6 +57,24 @@ export function filterMultiLineComment(...args) {
   return baseFilter(multiLineCommentFilter)(...args)
 }
 
+export function filterDisabledSingleLine(fileLineList) {
+  return fileLineList.filter((fileLine) => {
+    return !fileLine.value.includes('// disable-extract-line')
+  })
+}
+
+function removeI18NContent(str) {
+  return str
+    .replace(/AtomIntl.get\([^\)]*?\)/g, '')
+}
+
+export function i18nContentFilter(fileLineList) {
+  return fileLineList.filter((fileLine) => {
+    fileLine.value = removeI18NContent(fileLine.value)
+    return fileLine.value
+  })
+}
+
 function removeSingleLineComment(str = '') {
   return str
     // 过滤行内注释。ex： expression // comment 形式的注释

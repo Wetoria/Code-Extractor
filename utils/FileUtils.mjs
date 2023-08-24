@@ -26,6 +26,10 @@ function getFiles(dir, fileList = []) {
     const filePath = path.join(dir, file);
     const stat = fs.statSync(filePath);
 
+    if (filePath.includes('i18n')) {
+      return
+    }
+    
     if (stat.isDirectory()) {
       getFiles(filePath, fileList); // 如果是目录，再次递归
     } else {
