@@ -57,7 +57,7 @@ export function getAllFilePathOfDir(dirPath) {
   return filePaths;
 }
 
-export async function readFileListSync(filePaths) {
+export function readFileListSync(filePaths) {
   let result = []
   for (const filePath of filePaths) {
     const temp =  readFileSyncAndSplitByLine(filePath);
