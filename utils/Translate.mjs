@@ -1,8 +1,9 @@
 import crypto from 'crypto'
 import https from 'https'
+import config from '../config.json'
 
-let appid = ''
-let key = ''
+let appid = config.baiduTranslate.appid
+let key = config.baiduTranslate.key
 let salt = '123456'
 
 export function translateRequest(str, from = 'zh', to = 'en') {
