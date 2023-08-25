@@ -1,13 +1,6 @@
 import path from 'path';
 import fs from 'fs';
-import readline from 'readline';
-
-import { fileURLToPath } from 'url';
 import { dirname } from 'path';
-
-const __filename = fileURLToPath(import.meta.url);
-let __dirname = dirname(__filename);
-__dirname = dirname(__dirname + '../')
 
 const fileSuffix = '.jsx|.js|.tsx|.ts'
 const excludes = [
@@ -16,6 +9,19 @@ const excludes = [
   'intl.ts',
   'intl.tsx',
 ]
+
+function readFileSync(filePath) {
+  return fs.readFileSync(filePath, { encoding: 'utf-8' })
+}
+
+export function readFileSyncAndSplitByLine(filePath) {
+  const file = readFileSync(filePath)
+  return file.split('\n').map((line, index) => ({
+    value: line,
+    filePath,
+    lineNumber: index + 1,
+  }))
+}
 
 function getFiles(dir, fileList = []) {
   const files = fs.readdirSync(dir);
@@ -44,7 +50,7 @@ function getFiles(dir, fileList = []) {
 
   return fileList;
 }
-export function loadAllFileOfDir(dirPath) {
+export function getAllFilePathOfDir(dirPath) {
   const filePaths = getFiles(dirPath);
   // 防止每次读取的文件顺序不一致
   filePaths.sort();
@@ -54,56 +60,56 @@ export function loadAllFileOfDir(dirPath) {
 export async function readFileListSync(filePaths) {
   let result = []
   for (const filePath of filePaths) {
-    const temp =  await readFileLineByLine(filePath);
+    const temp =  readFileSyncAndSplitByLine(filePath);
     result.push(...temp)
   }
   return result
 }
 
-export async function readFileLineByLine(filePath) {
-  const fileStream = fs.createReadStream(filePath);
 
-  const rl = readline.createInterface({
-    input: fileStream,
-    crlfDelay: Infinity,
-  });
-  // 注意：使用 crlfDelay 选项
-  // 将 input.txt 中的所有 CR LF ('\r\n') 实例识别为单个换行符。
-  const result = []
-  let lineNumber = 0;
-  for await (const line of rl) {
-    lineNumber++;
-    result.push({
-      filePath,
-      fullPath: `${__dirname}/${filePath}`,
-      lineNumber,
-      value: line
-    })
-  }
-  return Promise.resolve(result)
-}
-
-
-export const getFileLogger = (path) => {
+export const getFileWriter = (path, clearAll = true) => {
   const dir = dirname(path);
   fs.mkdirSync(dir, { recursive: true })
-  fs.writeFileSync(path, '')
+  if (clearAll) {
+    fs.writeFileSync(path, '')
+  }
   return (str = '') => {
     fs.appendFileSync(path, str)
   }
 }
 
 
-const lineHasChineseLogger = getFileLogger('./Log/log-1-all-lines-has-chinese.txt')
+export const readJSONDataFromFile = (filePath) => {
+  return JSON.parse(readFileSync(filePath))
+}
+
+
+export function readJSModule(filePath, flag) {
+  const fileContents = fs.readFileSync(filePath, { encoding: 'utf-8'})
+  let formatted = fileContents
+    .replace(/import.*\n/g, '')
+    .replace(/export\s+default\s+{/, '{')
+    .replace(/,\s*}/g, '}')
+  if (flag) {
+    formatted = formatted.replace(/"[^"]+":[\sa-zA-Z]+,{0,1}\n/g, '')
+  }
+  return JSON.parse(formatted)
+}
+
+
+
+
+
+const lineHasChineseLogger = getFileWriter('./Log/log-1-all-lines-has-chinese.txt')
 export function logLineOfLineHasChinese(str = '') {
   lineHasChineseLogger(str + '\n')
 }
 
-const debugInfoLogger = getFileLogger('./Log/log-2-all-debug-info.txt')
+const debugInfoLogger = getFileWriter('./Log/log-2-all-debug-info.txt')
 export function logLineDebugInfo(str = '') {
   debugInfoLogger(str + '\n')
 }
-const lineHasChineseAfterFilterLogger = getFileLogger('./Log/log-3-lines-has-chinese-after-filter.txt')
+const lineHasChineseAfterFilterLogger = getFileWriter('./Log/log-3-lines-has-chinese-after-filter.txt')
 export function logLineOfLineHasChineseAfterFilter(str = '') {
   lineHasChineseAfterFilterLogger(str + '\n')
 }
@@ -140,7 +146,7 @@ export const recordLinesAfterFilterMultiLineComment = (fileLineList) => {
   logLineDebugInfo()
 }
 
-const resultsLogger = getFileLogger('./Log/log-4-result.txt')
+const resultsLogger = getFileWriter('./Log/log-4-result.txt')
 export function logLineOfResult(str = '') {
   resultsLogger(str + '\n')
 }
