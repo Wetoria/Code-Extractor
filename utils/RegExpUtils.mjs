@@ -6,3 +6,11 @@ export function containsChinese(str) {
   const regex = new RegExp(containsChineseRegStr, 'g');
   return regex.test(str);
 }
+
+export function getI18NReg() {
+  return /AtomIntl.get\(.*?(('\))|(}\))|(]\)))/g
+}
+
+export function getSingleQuoteReg() {
+  return /'.*?'/g
+}

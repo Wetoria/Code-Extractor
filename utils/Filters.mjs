@@ -18,7 +18,9 @@ function baseFilter(fn) {
 
 
 export function collectLineHasChinese(fileLineList) {
-  return fileLineList.filter((fileLine) => containsChinese(fileLine.value))
+  return fileLineList.filter((fileLine) => {
+    return containsChinese(fileLine.value)
+  })
 }
 
 let isMultiLineCommentsFlag = false;
@@ -77,6 +79,8 @@ export function i18nContentFilter(fileLineList) {
 
 function removeSingleLineComment(str = '') {
   return str
+    .trim()
+    .replace(/href=".*?"/g, (match) => match.replaceAll('//', '..'))
     // 过滤行内注释。ex： expression // comment 形式的注释
     .replace(/(?<=(\s+|;|^|:))\/\/.*$/g, '')
     // /* */ 格式

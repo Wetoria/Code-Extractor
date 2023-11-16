@@ -1,6 +1,6 @@
 import crypto from 'crypto'
 import https from 'https'
-import config from '../config.json'
+import config from '../config.mjs'
 
 let appid = config.baiduTranslate.appid
 let key = config.baiduTranslate.key

@@ -1,10 +1,6 @@
 import colorize from './Colorize.mjs'
 import * as Command from './Command.mjs'
 
-import {
-  promiseChainExcutor,
-} from './PromiseChain.mjs'
-
 export function getNamedFunction(key, fn = () => {}) {
   const coloredKey = `${key}`
   const obj = {
@@ -16,6 +12,16 @@ export function getNamedFunction(key, fn = () => {}) {
 }
 
 export let start = () => {
+  let foldPath = Command.getCmdValue('--path')
+
+  if (!foldPath) {
+    console.log(colorize.red(`You did not pass a directory path, \nYou should run Code-Extractor with a directory path like ${colorize.yellow(`node index.mjs --path='./src'`)}`))
+    return
+  }
+  return foldPath
+}
+
+export function getProcessFoldPath() {
   let foldPath = Command.getCmdValue('--path')
 
   if (!foldPath) {
@@ -156,7 +162,6 @@ export const removeDuplicate = (fileLineList) => {
       temp.push(fileLine)
     }
   })
-  console.log('After removed, lines is ', results.length)
   return results
 }
 
@@ -202,10 +207,10 @@ export const format = (fileLineList) => {
       fileLine.chineseKey = readyChineseKey;
       keyMap[fileLine.chineseKey] = true;
     }
-    fileLine.key = fileLine.filePath.replace(/(?<!(\.|^))\.{1}.*$/g, '').replaceAll(/^.*src(\/)?/g, '@/').replaceAll('/', '.').replace(/(^\.)|(\.$)/g, '')
+    fileLine.key = fileLine.filePath.replace(/(?<!(\.|^))\.{1}.*$/g, '').replaceAll(/^.*src(\/)?/g, '').replaceAll('/', '_').replace(/(^\.)|(\.$)/g, '')
     const isString = fileLine.isSingleQutoString || fileLine.isBackQuoteString || fileLine.isDoubleQutoString
     fileLine.isString = isString
-    const formatedStr = `AtomIntl.localeData['${fileLine.chineseKey}']`
+    const formatedStr = `'${fileLine.key}_${fileLine.formatted}'`
     const params = fileLine.template ? `, ${fileLine.template}` : ''
     const stringWithFunc = `AtomIntl.get(${formatedStr}${params})`
     fileLine.readyToReplace = fileLine.isSingleQutoString || fileLine.isBackQuoteString ? stringWithFunc : `{${stringWithFunc}}`
@@ -213,8 +218,10 @@ export const format = (fileLineList) => {
 }
 
 import {
-  getFileLogger,
+  getAllFilePathOfDir,
+  getFileWriter, readFileListSync, readFileSyncAndSplitByLine, readJSModule, readJSONDataFromFile,
 } from './FileUtils.mjs'
+import { getSingleQuoteReg } from './RegExpUtils.mjs'
 export const groupFileLineByFilePath = (fileLineList) => {
 
   const map = {}
@@ -225,19 +232,13 @@ export const groupFileLineByFilePath = (fileLineList) => {
     }
     target.push(fileLine)
   })
-
-  const logger = getFileLogger('./Log/log-result.txt')
-  logger(JSON.stringify(map, null, 2))
   return map
 }
 
-import {
-  readFileLineByLine,
-} from './FileUtils.mjs'
 export const replaceFileContent = async (fileMap) => {
   const paths = Object.keys(fileMap)
   for (let path of paths) {
-    const fileContents = await readFileLineByLine(path)
+    const fileContents = readFileSyncAndSplitByLine(path)
 
     const readyLines = fileMap[path]
 
@@ -249,32 +250,26 @@ export const replaceFileContent = async (fileMap) => {
       const targetLine = fileContents[lineNumber - 1]
       targetLine.value = targetLine.value.replace(lineInfo.matched, lineInfo.readyToReplace)
     })
-    const logger = getFileLogger(path)
-    const foldPath = Command.getCmdValue('--path')
-    const basePath = `${foldPath.replace(/^.*src(\/)?/g, '@/')}`
-    const localeDataFilePath = `${basePath}/i18n/localeData.ts`
-    logger(`import AtomIntl from '@/utils/intl.tsx';\n`)
+    const logger = getFileWriter(path)
     logger(fileContents.map(i => i.value).join('\n'))
     logger('\n')
   }
 }
 
-function generateZhLocaleData(fileLineList) {
-  const result = {}
+function generateZhLocaleData(fileLineList, result = {}) {
   fileLineList.forEach((fileLine) => {
-    const key = fileLine.key + '.' + fileLine.formatted
+    const key = fileLine.key + '_' + fileLine.formatted
     let str = fileLine.formatted
     result[key] = str
   })
   return result
 }
 
-async function generateEnUSLocaleData(fileLineList) {
-  const result = {}
+async function generateEnUSLocaleData(fileLineList, result = {}) {
   const translated = await batchGetTranslate(fileLineList)
   fileLineList.forEach((fileLine) => {
     const target = translated.find(i => i.src.trim() == fileLine.formatted.trim())
-    const key = fileLine.key + '.' + fileLine.formatted
+    const key = fileLine.key + '_' + fileLine.formatted
     result[key] = target ? target.dst : ''
   })
   return result
@@ -285,35 +280,142 @@ import {
   batchGetTranslate,
 } from './Translate.mjs'
 export const generateLocaleDataFile = async (fileLineList) => {
-  const result = {}
-  fileLineList.forEach((fileLine) => {
-    result[fileLine.chineseKey] = fileLine.key + '.' + fileLine.formatted
-  })
+  if (!fileLineList.length) return
+
   const foldPath = Command.getCmdValue('--path')
-  const localeDataFilePath = `${foldPath}/i18n/localeData.ts`
 
-  const zhCNData = generateZhLocaleData(fileLineList)
-  const zhCNDataFilePath = `${foldPath}/i18n/locales/zh-CN.ts`
-  const zhCNLogger = getFileLogger(zhCNDataFilePath)
-  zhCNLogger(`export default ${JSON.stringify(zhCNData, null, 2)}`)
-  result['zh-CN'] = 'zhCN'
+  const zhCNDataFilePath = `${foldPath}/i18n/locales/zh-CN.json`
+  const zhCNData = generateZhLocaleData(fileLineList, readJSONDataFromFile(zhCNDataFilePath))
+  const zhCNLogger = getFileWriter(zhCNDataFilePath)
+  zhCNLogger(`${JSON.stringify(zhCNData, null, 2)}`)
 
 
-  const enUSData = await generateEnUSLocaleData(fileLineList)
-  const enUSDataFilePath = `${foldPath}/i18n/locales/en-US.ts`
-  const enUSLogger = getFileLogger(enUSDataFilePath)
-  enUSLogger(`export default ${JSON.stringify(enUSData, null, 2)}`)
-  result['en-US'] = 'enUS'
+  const enUSDataFilePath = `${foldPath}/i18n/locales/en-US.json`
+  const enUSData = await generateEnUSLocaleData(fileLineList, readJSONDataFromFile(enUSDataFilePath))
+  const enUSLogger = getFileWriter(enUSDataFilePath)
+  enUSLogger(`${JSON.stringify(enUSData, null, 2)}`)
 
 
-  const logger = getFileLogger(localeDataFilePath)
-  logger(`import enUS from './locales/en-US'\nimport zhCN from './locales/zh-CN'\n`)
-  logger(`export default ${JSON.stringify(result, null, 2).replace('"enUS"', 'enUS').replace('"zhCN"', 'zhCN')}`)
+  // const logger = getFileWriter(localeDataFilePath)
+  // logger(`import enUS from './locales/en-US'\nimport zhCN from './locales/zh-CN'\n`)
+  // logger(`export default ${JSON.stringify(result, null, 2).replace('"enUS"', 'enUS').replace('"zhCN"', 'zhCN')}`)
 
-  const csvFilePath = `${foldPath}/i18n/localeData.csv`
-  const csvLogger = getFileLogger(csvFilePath)
-  csvLogger(`中文内容	英文翻译结果（校对时，只需要确认并修改该列）	在文件中调用的key	实际上获取结果的key\n`)
-  csvLogger(`${fileLineList.map(fileLine => `${zhCNData[fileLine.key + '.' + fileLine.formatted]}	${enUSData[fileLine.key + '.' + fileLine.formatted]}	${fileLine.chineseKey}	${fileLine.key + '.' + fileLine.formatted}`).join('\n')}`)
+  // const csvFilePath = `${foldPath}/i18n/localeData.csv`
+  // const csvLogger = getFileWriter(csvFilePath)
+  // csvLogger(`中文内容	英文翻译结果（校对时，只需要确认并修改该列）	在文件中调用的key	实际上获取结果的key\n`)
+  // csvLogger(`${fileLineList.map(fileLine => `${zhCNData[fileLine.key + '.' + fileLine.formatted]}	${enUSData[fileLine.key + '.' + fileLine.formatted]}	${fileLine.chineseKey}	${fileLine.key + '.' + fileLine.formatted}`).join('\n')}`)
+}
+
+export function getLocaleData(locale) {
+  const foldPath = Command.getCmdValue('--path')
+  const filePath = `${foldPath}/i18n/locales/${locale}.json`
+  const data = readJSONDataFromFile(filePath);
+  return data
+}
+
+export function getZhCNData() {
+  return getLocaleData('zh-CN');
+}
+export function getEnUSData() {
+  return getLocaleData('en-US');
+}
+
+
+export function getFileLines() {
+  const foldPath = getProcessFoldPath()
+  const filePaths = getAllFilePathOfDir(foldPath)
+  const fileLines = readFileListSync(filePaths);
+  return fileLines;
+}
+
+export function getI18NLines() {
+  const fileLineList = getFileLines();
+  const result = fileLineList.filter((fileLine) => {
+    return fileLine.value.includes('AtomIntl.get(')
+  })
+  return result;
+}
+
+export function extractWithReg(reg) {
+  return function extractLineWithReg(fileLineList) {
+    const results = []
+      fileLineList.forEach((fileLine) => {
+        const matched = fileLine.value.match(reg)
+        if (matched) {
+          matched.forEach((match) => {
+            const colNumber = fileLine.value.indexOf(match.trim())
+            results.push({
+              ...fileLine,
+              matched: match.trim(),
+              colNumber: colNumber + 1,
+            })
+          })
+        }
+      })
+      return results;
+  }
+}
+
+export function getFilePathKey(fileLine) {
+  return fileLine.filePath.replace(/(?<!(\.|^))\.{1}.*$/g, '').replaceAll(/^.*src(\/)?/g, '').replaceAll('/', '_').replace(/(^\.)|(\.$)/g, '') + '_'
+}
+
+export function checkHasIncorrectKey(fileLineList) {
+  return fileLineList.filter((fileLine) => {
+    const filePathKey = getFilePathKey(fileLine)
+    const reg = getSingleQuoteReg()
+    const match = fileLine.matched.match(reg)
+    const afterKey = match[0].replace(filePathKey, '')
+    if (afterKey.includes('_')) {
+      console.log(`|${colorize.blue(`Line from ${fileLine.filePath}:${fileLine.lineNumber}:${fileLine.colNumber}`)}`)
+      console.log(match[0])
+      console.log("'" + filePathKey + '\n')
+    }
+    return true
+  })
+}
+
+export function checkNotSaveInZhCN(fileLineList) {
+  const zhCNData = getZhCNData()
+  return fileLineList.filter((fileLine) => {
+    const filePathKey = getFilePathKey(fileLine)
+    const reg = getSingleQuoteReg()
+    const match = fileLine.matched.match(reg)
+    const afterKey = match[0].replaceAll("'", '')
+    if (!zhCNData[afterKey]) {
+      console.log(`|${colorize.blue(`Line from ${fileLine.filePath}:${fileLine.lineNumber}:${fileLine.colNumber}`)}`)
+      console.log(afterKey)
+    }
+    return true
+  })
+}
+
+export function logInTerminalWithReg(reg) {
+  return function logLineInfoInTerminalWithReg(fileLineList) {
+    fileLineList.forEach((fileLine) => {
+      const logLineString = fileLine.value
+        .highLight(reg, colorize.colorMap.red)
+      console.log('')
+      console.log(`|${colorize.blue(`Line from ${fileLine.filePath}:${fileLine.lineNumber}:${fileLine.colNumber}`)}`)
+      console.log(`|${logLineString}`)
+    })
+    return fileLineList
+  }
+}
+
+export function checkNotTranslatedMessage() {
+  const zhCNData = getZhCNData()
+  const enUSData = getEnUSData()
+
+  Object.keys(zhCNData).forEach((key) => {
+    // console.log('key ', key, zhCNData[key], enUSData[key])
+    if (!(key in enUSData) ||!enUSData[key]) {
+      console.log('key ', key)
+      console.log(zhCNData[key])
+      console.log(enUSData[key])
+      console.log()
+    }
+  })
 }
 
 export {
